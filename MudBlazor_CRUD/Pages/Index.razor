@@ -1,0 +1,114 @@
+﻿@page "/"
+
+@using MudBlazor_CRUD.Models
+@using MudBlazor_CRUD.ViewModel
+@inject MudBlazor_CRUD.Services.IStudentService _studentService
+@inject MudBlazor_CRUD.Services.ICountryService _countryService
+@inject MudBlazor_CRUD.Services.IClassService _classService
+@inject MudBlazor.ISnackbar snackBar
+<div class="container row">
+    <div class="col-md-6">
+<h3>Count of Student Per Class</h3>
+ 
+
+<MudTable Items="@studentPerClass" Hover="true" Breakpoint="Breakpoint.Sm"  LoadingProgressColor="Color.Info">
+    <HeaderContent>
+        <MudTh>Class Name</MudTh>
+        <MudTh>Student Count</MudTh> 
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Class Name">@context.class_name</MudTd>
+        <MudTd DataLabel="Student Count">@context.student_count</MudTd> 
+    </RowTemplate>
+</MudTable>
+</div>
+  <div class="col-md-6">
+<h3>Count of Student Per Country</h3>
+ 
+
+<MudTable Items="@studentPerCountry" Hover="true" Breakpoint="Breakpoint.Sm"  LoadingProgressColor="Color.Info">
+    <HeaderContent>
+        <MudTh>Country Name</MudTh>
+        <MudTh>Student Count</MudTh> 
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Class Name">@context.country_name</MudTd>
+        <MudTd DataLabel="Student Count">@context.student_count</MudTd> 
+    </RowTemplate>
+</MudTable>
+
+  </div>
+</div>
+<div class="container row">
+    <div class="col-md-12">
+       
+    <MudTable Elevation="25" Items="GetAllStudents()" Filter="new Func<Student, bool>(Search)" @bind-customer="student">
+    <ToolBarContent>
+        <h3 >  Average age of students </h3>
+        <MudToolBarSpacer />
+        <MudTextField @bind-Value="searchString" Placeholder="Search for Students..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Id</MudTh>
+        <MudTh>Student Name</MudTh> 
+        <MudTh>Age</MudTh> 
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Id">@context.id</MudTd>
+        <MudTd DataLabel="Student Name">@context.name</MudTd> 
+        <MudTd DataLabel="Age">@getAge(@context.date_of_birth)</MudTd>  
+         
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 5,10,20,50}" />
+    </PagerContent>
+</MudTable>
+</div>
+</div>
+@code{
+    private string searchString = "";
+
+    private Student student = new(); //C# 9 Syntax
+    private List<Student> students = new();
+    private List<StudentPerClass> studentPerClass = new();
+    private List<StudentPerCountry> studentPerCountry = new();
+    protected override async Task OnInitializedAsync()
+    {
+         GetAllStudents();
+        CountAllStudentsPerClass();
+        CountAllStudentsPerCountry();
+    }
+
+    private List<StudentPerClass> CountAllStudentsPerClass()
+    {
+        studentPerClass  = _studentService.CountAllStudentsPerClass();
+        return studentPerClass;
+    }
+     private List<StudentPerCountry> CountAllStudentsPerCountry()
+    {
+        studentPerCountry  = _studentService.CountAllStudentsPerCountry();
+        return studentPerCountry;
+    }
+     private List<Student> GetAllStudents()
+    {
+        students  = _studentService.GetStudents();
+        return students;
+    }
+    private bool Search(Student student)
+    {
+        if (student.name is not null  &&
+            student.name.Contains(searchString, StringComparison.OrdinalIgnoreCase) )
+        {
+            return true;
+        }
+        return false;
+    }
+     public int getAge(DateTime? dob){ 
+        DateTime dob2 = dob ?? DateTime.Now;
+        var today = DateTime.Today;
+        var age = today.Year - dob2.Year;
+        if (dob?.Date > today.AddYears(-age)) age--;
+        return age;
+    
+   }
+}

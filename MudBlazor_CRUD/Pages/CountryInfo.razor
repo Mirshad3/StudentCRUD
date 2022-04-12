@@ -1,0 +1,87 @@
+﻿@page "/country"
+
+@using MudBlazor_CRUD.Models
+@inject MudBlazor_CRUD.Services.ICountryService _countryService
+@inject MudBlazor.ISnackbar snackBar
+
+
+<MudCard Elevation="25">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Add / Edit Countries</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudTextField @bind-Value="country.name" Label="Country Name" Variant="Variant.Text" Margin="Margin.Normal"></MudTextField>
+         <br />
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Save">Save Country</MudButton>
+    </MudCardContent>
+</MudCard>
+<br />
+<MudTable Elevation="25" Items="GetAllCountrys()" Filter="new Func<Country, bool>(Search)" @bind-customer="country">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Countrys</MudText>
+        <MudToolBarSpacer />
+        <MudTextField @bind-Value="searchString" Placeholder="Search for Countrys..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Id</MudTh>
+        <MudTh>Country Name</MudTh> 
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Id">@context.id</MudTd>
+        <MudTd DataLabel="Country Name">@context.name</MudTd> 
+        <MudTd DataLabel="">
+            <MudFab @onclick="@(()=>Edit(@context.id))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+            <MudFab @onclick="@(()=>Delete(@context.id))" Color="Color.Secondary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 5,10,20,50}" />
+    </PagerContent>
+</MudTable>
+
+@code{
+    private string searchString = "";
+
+    private Country country = new(); //C# 9 Syntax
+    private List<Country> countrys = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        GetAllCountrys();
+    }
+
+    private List<Country> GetAllCountrys()
+    {
+        countrys  = _countryService.GetCountries();
+        return countrys;
+    }
+    private bool Search(Country country)
+    {
+        if (country.name is not null  &&
+            country.name.Contains(searchString, StringComparison.OrdinalIgnoreCase) )
+        {
+            return true;
+        }
+        return false;
+    }
+
+    private void Save()
+    {
+        _countryService.InsertCountry(country);
+        snackBar.Add("Country record saved", Severity.Success);
+        GetAllCountrys();
+    }
+    private void Edit(int id)
+    {
+        country = countrys.FirstOrDefault(c => c.id == id);
+    }
+    private void Delete(int id)
+    {
+        _countryService.DeleteCountry(id);
+        snackBar.Add("Country Data Deleted.", Severity.Success);
+        GetAllCountrys();
+    }
+}

@@ -1,0 +1,141 @@
+﻿@page "/student"
+
+@using MudBlazor_CRUD.Models
+@inject MudBlazor_CRUD.Services.IStudentService _studentService
+@inject MudBlazor_CRUD.Services.ICountryService _countryService
+@inject MudBlazor_CRUD.Services.IClassService _classService
+@inject MudBlazor.ISnackbar snackBar
+
+
+<MudCard Elevation="25">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Add / Edit Students</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+         <MudItem xs="12" sm="6" md="4">
+        <MudTextField @bind-Value="student.name" Label="Student Name" Variant="Variant.Text" Margin="Margin.Normal"></MudTextField>
+       </MudItem>
+       <MudItem xs="12" sm="6" md="4">
+        <MudDatePicker Label="Date Of Birth" Editable="true" @bind-Value="student.date_of_birth" @bind-Date="@student.date_of_birth"  @bind-Value:format="dd/MM/yyyy"  Placeholder="Select Date" />
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudSelect T="Classes" Label="Classes" @bind-Value="@student.Classes"  >
+            @foreach (var selectItem in classes)
+            {
+                <MudSelectItem Value="@selectItem">@selectItem.class_name</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudSelect T="Country" Label="Countries" @bind-Value="@student.Country"   >
+            @foreach (var selectItem in countries)
+            {
+                <MudSelectItem Value="@selectItem">@selectItem.name</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+      
+    <br />
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Save">Save Student</MudButton>
+    </MudCardContent>
+</MudCard>
+<br />
+<MudTable Elevation="25" Items="GetAllStudents()" Filter="new Func<Student, bool>(Search)" @bind-customer="student">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Students</MudText>
+        <MudToolBarSpacer />
+        <MudTextField @bind-Value="searchString" Placeholder="Search for Students..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Id</MudTh>
+        <MudTh>Student Name</MudTh>
+        <MudTh>Date Of Birth</MudTh>
+        <MudTh>Age</MudTh>
+        <MudTh>Class</MudTh>
+        <MudTh>Country</MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Id">@context.id</MudTd>
+        <MudTd DataLabel="Student Name">@context.name</MudTd>
+        <MudTd DataLabel="Date Of Birth">@context.date_of_birth</MudTd> 
+        <MudTd DataLabel="Age">@getAge(@context.date_of_birth)</MudTd> 
+        <MudTd DataLabel="Class">@context.Classes.class_name</MudTd>
+        <MudTd DataLabel="Country">@context.Country.name</MudTd> 
+        <MudTd DataLabel="">
+            <MudFab @onclick="@(()=>Edit(@context.id))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+            <MudFab @onclick="@(()=>Delete(@context.id))" Color="Color.Secondary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 5,10,20,50}" />
+    </PagerContent>
+</MudTable>
+
+@code{
+    private string searchString = "";
+
+    private Student student = new(); //C# 9 Syntax
+    private List<Student> students = new();
+    private List<Country> countries = new();
+    private List<Classes> classes = new(); 
+    DateTime? date = DateTime.Today;
+    protected override async Task OnInitializedAsync()
+    {
+        GetAllStudents();
+        GetAllCountries();
+        GetAllClasses();
+    }
+
+    private List<Student> GetAllStudents()
+    {
+        students  = _studentService.GetStudents();
+        return students;
+    }
+    private List<Country> GetAllCountries()
+    {
+        countries = _countryService.GetCountries(); 
+        return countries;
+    }
+    private List<Classes> GetAllClasses()
+    {
+        classes = _classService.GetClasss(); 
+        return classes;
+    }
+    private bool Search(Student student)
+    {
+        if (student.name is not null  &&
+            student.name.Contains(searchString, StringComparison.OrdinalIgnoreCase) )
+        {
+            return true;
+        }
+        return false;
+    }
+
+    private void Save()
+    {
+        _studentService.InsertStudent(student);
+        snackBar.Add("Student record saved", Severity.Success);
+        GetAllStudents();
+    }
+    private void Edit(int id)
+    {
+        student = students.FirstOrDefault(c => c.id == id);
+    }
+    private void Delete(int id)
+    {
+        _studentService.DeleteStudent(id);
+        snackBar.Add("Student Data Deleted.", Severity.Success);
+        GetAllStudents();
+    }
+    public int getAge(DateTime? dob){ 
+       DateTime dob2 = dob ?? DateTime.Now;
+        var today = DateTime.Today;
+        var age = today.Year - dob2.Year;
+        if (dob?.Date > today.AddYears(-age)) age--;
+        return age;
+    
+   }
+}
